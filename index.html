@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Taitan CChecker - Card Validator & Generator</title>
+    <meta name="description" content="Fast and free credit card validation and generation.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['Ubuntu Mono', 'monospace'],
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1',
+                            400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155',
+                            800: '#1e293b', 900: '#0f172a',
+                        },
+                        'status-success': '#10b981',
+                        'status-danger': '#ef4444',
+                        'status-warning': '#f59e0b',
+                    },
+                },
+            },
+        };
+    </script>
+
+    <style>
+        html, body {
+            overflow-x: hidden;
+        }
+
+        ::-webkit-scrollbar {
+            display: none !important;
+        }
+
+        body {
+            background-color: #f8fafc;
+            color: #0f172a;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        header, nav {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            color: #0f172a;
+        }
+
+        .text-slate-900 { color: #0f172a; }
+        .text-slate-600 { color: #475569; }
+        .text-slate-400 { color: #94a3b8; }
+
+        .nav-link {
+            color: #64748b;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #0f172a;
+        }
+
+        .encoder-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            transition: all .2s ease;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.025);
+            border-radius: 0;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .encoder-card:hover {
+            border-color: #94a3b8;
+        }
+
+        #data, .generator-input {
+            resize: none !important;
+            height: 250px;
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            outline: none;
+            background-color: #f1f5f9;
+            color: #1e293b;
+            padding: 1.25rem;
+            border-radius: 0;
+            box-shadow: none !important;
+            font-family: 'Ubuntu Mono', monospace;
+            font-size: 0.875rem;
+        }
+        .generator-input {
+            height: auto;
+            padding: 0.75rem 1.25rem;
+            font-size: 1rem;
+        }
+        #data::placeholder, .generator-input::placeholder {
+            color: #94a3b8 !important;
+            opacity: 1 !important;
+        }
+
+        .btn-action {
+            background-color: #0f172a;
+            border: 1px solid #0f172a;
+            color: #ffffff;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            border-radius: 0;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-action:hover {
+            background-color: #1e293b;
+            border-color: #1e293b;
+        }
+        .btn-action:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-stop {
+            background-color: #475569;
+            border: 1px solid #475569;
+            color: #ffffff;
+        }
+        .btn-stop:hover {
+            background-color: #334155;
+            border-color: #334155;
+        }
+        .btn-stop:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .panel {
+            background-color: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+        }
+
+        .panel-heading {
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            background-color: #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            color: #1e293b;
+            font-weight: 600;
+            font-size: 1.125rem;
+        }
+
+        .badge {
+            display: inline-block;
+            min-width: 1.5rem;
+            padding: 0.25rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            line-height: 1;
+            color: #0f172a;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            background-color: #e2e8f0;
+            border-radius: 9999px;
+            margin-left: 0.5rem;
+        }
+
+        .panel-body {
+            padding: 1.25rem 1.5rem;
+            color: #475569;
+            max-height: 250px;
+            overflow-y: auto;
+            font-size: 0.875rem;
+            font-family: 'Ubuntu Mono', monospace;
+        }
+        .panel-body p {
+            margin-bottom: 0.5rem;
+        }
+
+        .panel-body .status-success-text { color: #10b981; }
+        .panel-body .status-danger-text { color: #ef4444; }
+        .panel-body .status-warning-text { color: #f59e0b; }
+
+        #notification-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .toast {
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.25rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            max-width: 20rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        .toast.success { background-color: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+        .toast.error   { background-color: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; }
+        .toast.warning { background-color: #fffbeb; border: 1px solid #fde68a; color: #b45309; }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to   { transform: translateX(0);   opacity: 1; }
+        }
+
+        footer {
+            margin-top: 5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+        }
+        footer a {
+            color: #64748b;
+            text-decoration: underline;
+        }
+        footer a:hover {
+            color: #0f172a;
+        }
+
+    </style>
+</head>
+
+<body class="font-sans min-h-screen">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-40 py-5">
+        <div class="max-w-2xl mx-auto px-6 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-credit-card text-slate-900"></i>
+                <h1 class="text-xl font-bold text-slate-900">Taitan CChecker</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="https://t.me/oxmzoo" target="_blank" class="text-sm text-slate-600 hover:text-slate-900">
+                    <i class="fab fa-telegram-plane"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="py-3">
+        <div class="max-w-2xl mx-auto px-6">
+            <ul class="flex justify-center space-x-8 text-sm font-medium">
+                <li><a class="nav-link active" id="validator-link" href="#" data-target="validator-section">Card Validator</a></li>
+                <li><a class="nav-link" id="generator-link" href="#" data-target="generator-section">Card Generator</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="max-w-2xl mx-auto px-6 py-10">
+        <!-- Card Checker Section -->
+        <div id="validator-section">
+            <div class="encoder-card mt-5">
+                <form method="post" action="" id="ccCheckerForm">
+                    <div class="mb-5">
+                        <label for="data" class="block text-sm font-bold text-slate-900 mb-2">Enter Cards (e.g., 49090005276xxxxx|04|2025|896)</label>
+                        <textarea placeholder="49090005276xxxxx|04|2025|896" id="data" rows="10" cols="30" name="data"></textarea>
+                    </div>
+                    <div class="flex justify-center space-x-4">
+                        <button class="btn-action" name="start" type="submit" value="Start Processing">
+                            <i class="fas fa-play"></i> Start
+                        </button>
+                        <button class="btn-action btn-stop" name="stop" type="submit" value="stop Processing">
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results Panels -->
+            <div class="panel">
+                <div class="panel-heading">
+                    <h3 class="panel-title live">Live <span class="badge count-success">0</span></h3>
+                </div>
+                <div class="panel-body success"></div>
+                <div class="panel-footer flex justify-center space-x-2 p-3 border-t border-e2e8f0">
+                    <button class="btn-action !py-2 !px-4 text-sm" onclick="copyLiveCCs()">
+                        <i class="fas fa-copy"></i> Copy Live
+                    </button>
+                    <button class="btn-action !py-2 !px-4 text-sm" onclick="downloadLiveCCs()">
+                        <i class="fas fa-download"></i> Download Live
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-heading">
+                    <h3 class="panel-title dead">Dead <span class="badge count-danger">0</span></h3>
+                </div>
+                <div class="panel-body danger"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-heading">
+                    <h3 class="panel-title unknown">Unknown <span class="badge count-warning">0</span></h3>
+                </div>
+                <div class="panel-body warning"></div>
+            </div>
+        </div>
+        <!-- End Card Checker Section -->
+
+        <!-- Card Generator Section (Initially hidden) -->
+        <div id="generator-section" class="hidden">
+            <div class="encoder-card mt-5">
+                <h2 class="text-xl font-bold text-slate-900 mb-4">Card Generator</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                    <div>
+                        <label for="bin" class="block text-sm font-bold text-slate-900 mb-2">BIN (e.g., 49090005276xxxxx)</label>
+                        <input type="text" id="bin" class="generator-input" placeholder="49090005xxxxxx" value="">
+                    </div>
+                    <div>
+                        <label for="quantity" class="block text-sm font-bold text-slate-900 mb-2">Quantity</label>
+                        <input type="number" id="quantity" class="generator-input" value="10" min="1" max="10000">
+                    </div>
+                    <div>
+                        <label for="month" class="block text-sm font-bold text-slate-900 mb-2">Month (MM or 'rnd')</label>
+                        <input type="text" id="month" class="generator-input" placeholder="MM or 'rnd'" value="rnd">
+                    </div>
+                    <div>
+                        <label for="year" class="block text-bold text-slate-900 mb-2">Year (YY or YYYY or 'rnd')</label>
+                        <input type="text" id="year" class="generator-input" placeholder="YY, YYYY or 'rnd'" value="rnd">
+                    </div>
+                    <div>
+                        <label for="cvv" class="block text-sm font-bold text-slate-900 mb-2">CVV (3 digits or 'rnd')</label>
+                        <input type="text" id="cvv" class="generator-input" placeholder="XXX or 'rnd'" value="rnd">
+                    </div>
+                </div>
+                <div class="flex flex-col items-center space-y-3">
+                    <button class="btn-action w-full max-w-xs" id="generate-cards-btn">
+                        <i class="fas fa-plus-circle"></i> Generate Cards
+                    </button>
+                    <div class="flex justify-center space-x-2 w-full">
+                        <button class="btn-action !py-2 !px-4 text-sm" onclick="copyGeneratedCCs()">
+                            <i class="fas fa-copy"></i> Copy All
+                        </button>
+                        <button class="btn-action !py-2 !px-4 text-sm" onclick="downloadGeneratedCCs()">
+                            <i class="fas fa-download"></i> Download All
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Generated Cards <span class="badge" id="generated-count">0</span></h3>
+                </div>
+                <div class="panel-body" id="generated-cards-output">
+                </div>
+            </div>
+        </div>
+        <!-- End Card Generator Section -->
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-20 text-center text-xs">
+        <p>Developed by <a href="https://t.me/oxmzoo" target="_blank">Taitan</a></p>
+        <p class="mt-1">© 2025 Taitan. All rights reserved.</p>
+    </footer>
+
+    <!-- Toast Container -->
+    <div id="notification-container"></div>
+
+    <script>
+        // ============================================
+        // API CONFIGURATION - CHANGE THIS TO YOUR BACKEND URL
+        // ============================================
+        const API_BASE_URL = 'https://backende-peach.vercel.app/api';
+
+        // Validator Section Elements
+        const textarea = document.getElementById('data');
+        const countSuccess = document.querySelector('.count-success');
+        const countDanger = document.querySelector('.count-danger');
+        const countWarning = document.querySelector('.count-warning');
+        const panelBodySuccess = document.querySelector('.panel-body.success');
+        const panelBodyDanger = document.querySelector('.panel-body.danger');
+        const panelBodyWarning = document.querySelector('.panel-body.warning');
+        const ccCheckerForm = document.getElementById('ccCheckerForm');
+        const startButton = ccCheckerForm.querySelector('button[name="start"]');
+        const stopButton = ccCheckerForm.querySelector('button[name="stop"]');
+        const notificationContainer = document.getElementById('notification-container');
+
+        // Generator Section Elements
+        const binInput = document.getElementById('bin');
+        const quantityInput = document.getElementById('quantity');
+        const monthInput = document.getElementById('month');
+        const yearInput = document.getElementById('year');
+        const cvvInput = document.getElementById('cvv');
+        const generateCardsBtn = document.getElementById('generate-cards-btn');
+        const generatedCardsOutput = document.getElementById('generated-cards-output');
+        const generatedCount = document.getElementById('generated-count');
+
+        // Navigation Elements
+        const validatorLink = document.getElementById('validator-link');
+        const generatorLink = document.getElementById('generator-link');
+        const validatorSection = document.getElementById('validator-section');
+        const generatorSection = document.getElementById('generator-section');
+
+        // --- Global Functions ---
+        const showToast = (msg, type = 'success') => {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = type === 'success'
+                ? `<i class="fas fa-check-circle mr-2"></i>${msg}`
+                : type === 'error'
+                ? `<i class="fas fa-exclamation-triangle mr-2"></i>${msg}`
+                : `<i class="fas fa-info-circle mr-2"></i>${msg}`;
+            notificationContainer.prepend(toast);
+            setTimeout(() => toast.remove(), 3000);
+        };
+
+        // --- Navigation Logic ---
+        function showSection(sectionId) {
+            validatorSection.classList.add('hidden');
+            generatorSection.classList.add('hidden');
+            validatorLink.classList.remove('active');
+            generatorLink.classList.remove('active');
+
+            if (sectionId === 'validator-section') {
+                validatorSection.classList.remove('hidden');
+                validatorLink.classList.add('active');
+            } else if (sectionId === 'generator-section') {
+                generatorSection.classList.remove('hidden');
+                generatorLink.classList.add('active');
+            }
+        }
+
+        validatorLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection('validator-section');
+        });
+
+        generatorLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection('generator-section');
+        });
+
+        // --- Card Validator Logic ---
+        let stopProcessingFlag = false;
+
+        async function processAndRemove() {
+            let initialLines = textarea.value.split('\n').filter(line => line.trim() !== '');
+            let totalLines = initialLines.length;
+            let processedLineIndex = 0;
+
+            if (totalLines === 0) {
+                showToast("No cards to process!", "error");
+                return;
+            }
+
+            startButton.disabled = true;
+            stopButton.disabled = false;
+            stopProcessingFlag = false;
+
+            const processSingleLine = async () => {
+                if (stopProcessingFlag || processedLineIndex >= totalLines) {
+                    textarea.value = "";
+                    showToast("Processing finished!", "success");
+                    startButton.disabled = false;
+                    stopButton.disabled = true;
+                    return;
+                }
+
+                const originalLine = initialLines[processedLineIndex];
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/validate`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ card: originalLine })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+
+                    let statusClass;
+                    let statusText;
+                    let toastType;
+
+                    if (result.status === 'live') {
+                        statusClass = 'status-success-text';
+                        statusText = 'Live';
+                        panelBodySuccess.innerHTML += `<p class="${statusClass}">${statusText} - ${originalLine}</p>`;
+                        panelBodySuccess.scrollTop = panelBodySuccess.scrollHeight;
+                        countSuccess.innerText = parseInt(countSuccess.innerText) + 1;
+                        toastType = 'success';
+                    } else if (result.status === 'dead') {
+                        statusClass = 'status-danger-text';
+                        statusText = 'Dead';
+                        panelBodyDanger.innerHTML += `<p class="${statusClass}">${statusText} - ${originalLine}</p>`;
+                        panelBodyDanger.scrollTop = panelBodyDanger.scrollHeight;
+                        countDanger.innerText = parseInt(countDanger.innerText) + 1;
+                        toastType = 'error';
+                    } else {
+                        statusClass = 'status-warning-text';
+                        statusText = 'Unknown';
+                        panelBodyWarning.innerHTML += `<p class="${statusClass}">${statusText} - ${originalLine}</p>`;
+                        panelBodyWarning.scrollTop = panelBodyWarning.scrollHeight;
+                        countWarning.innerText = parseInt(countWarning.innerText) + 1;
+                        toastType = 'warning';
+                    }
+
+                    showToast(`Processing: ${originalLine.substring(0, Math.min(originalLine.length, 20))}... Status: ${statusText}`, toastType);
+
+                    const currentTextareaLines = textarea.value.split('\n').filter(line => line.trim() !== '');
+                    if (currentTextareaLines.length > 0) {
+                        currentTextareaLines.shift();
+                        textarea.value = currentTextareaLines.join('\n');
+                    }
+
+                } catch (error) {
+                    showToast(`Error: ${error.message}`, 'error');
+                    console.error('Validation error:', error);
+                }
+
+                processedLineIndex++;
+
+                setTimeout(processSingleLine, 100);
+            };
+
+            processSingleLine();
+        }
+
+        ccCheckerForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            if (event.submitter.name === 'start') {
+                panelBodySuccess.innerHTML = '';
+                panelBodyDanger.innerHTML = '';
+                panelBodyWarning.innerHTML = '';
+                countSuccess.innerText = '0';
+                countDanger.innerText = '0';
+                countWarning.innerText = '0';
+                processAndRemove();
+            }
+        });
+
+        stopButton.addEventListener('click', function(event) {
+            event.preventDefault();
+            stopProcessingFlag = true;
+            showToast("Processing stopped!", "warning");
+            startButton.disabled = false;
+            stopButton.disabled = true;
+        });
+
+        function copyLiveCCs() {
+            const liveCCs = Array.from(panelBodySuccess.querySelectorAll('p'))
+                               .map(p => p.textContent.replace(/^Live - /, '').trim());
+            const textToCopy = liveCCs.join('\n');
+
+            if (textToCopy) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    showToast('Live CCs copied to clipboard!', 'success');
+                }).catch(err => {
+                    showToast('Failed to copy Live CCs.', 'error');
+                    console.error('Error copying text: ', err);
+                });
+            } else {
+                showToast('No Live CCs to copy.', 'warning');
+            }
+        }
+
+        function downloadLiveCCs() {
+            const liveCCs = Array.from(panelBodySuccess.querySelectorAll('p'))
+                               .map(p => p.textContent.replace(/^Live - /, '').trim());
+            const textToDownload = liveCCs.join('\n');
+
+            if (textToDownload) {
+                const blob = new Blob([textToDownload], { type: 'text/plain' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'live_ccs.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+                showToast('Live CCs downloaded!', 'success');
+            } else {
+                showToast('No Live CCs to download.', 'warning');
+            }
+        }
+
+
+        // --- Card Generator Logic ---
+
+        async function generateCreditCard() {
+            const bin = binInput.value.trim();
+            const quantity = parseInt(quantityInput.value);
+            const month = monthInput.value.trim();
+            const year = yearInput.value.trim();
+            const cvv = cvvInput.value.trim();
+
+            if (!bin || bin.length < 6) {
+                showToast("Please enter a valid BIN (at least 6 digits).", "error");
+                return;
+            }
+            if (isNaN(quantity) || quantity < 1 || quantity > 10000) {
+                showToast("Quantity must be between 1 and 10000.", "error");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        bin: bin,
+                        quantity: quantity,
+                        month: month,
+                        year: year,
+                        cvv: cvv
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.error) {
+                    showToast(result.error, "error");
+                    return;
+                }
+
+                generatedCardsOutput.innerHTML = '';
+                result.cards.forEach(card => {
+                    const p = document.createElement('p');
+                    p.textContent = card;
+                    generatedCardsOutput.appendChild(p);
+                });
+                generatedCount.textContent = result.cards.length;
+                showToast(`${result.cards.length} cards generated!`, "success");
+                generatedCardsOutput.scrollTop = generatedCardsOutput.scrollHeight;
+
+            } catch (error) {
+                showToast(`Error: ${error.message}`, 'error');
+                console.error('Generation error:', error);
+            }
+        }
+
+        generateCardsBtn.addEventListener('click', generateCreditCard);
+
+        function copyGeneratedCCs() {
+            const generatedCCs = Array.from(generatedCardsOutput.querySelectorAll('p'))
+                               .map(p => p.textContent.trim());
+            const textToCopy = generatedCCs.join('\n');
+
+            if (textToCopy) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    showToast('Generated CCs copied to clipboard!', 'success');
+                }).catch(err => {
+                    showToast('Failed to copy generated CCs.', 'error');
+                    console.error('Error copying text: ', err);
+                });
+            } else {
+                showToast('No generated CCs to copy.', 'warning');
+            }
+        }
+
+        function downloadGeneratedCCs() {
+            const generatedCCs = Array.from(generatedCardsOutput.querySelectorAll('p'))
+                               .map(p => p.textContent.trim());
+            const textToDownload = generatedCCs.join('\n');
+
+            if (textToDownload) {
+                const blob = new Blob([textToDownload], { type: 'text/plain' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'generated_ccs.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+                showToast('Generated CCs downloaded!', 'success');
+            } else {
+                showToast('No generated CCs to download.', 'warning');
+            }
+        }
+
+
+        // --- Initial Load Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            stopButton.disabled = true;
+            showSection('validator-section');
+        });
+    </script>
+</body>
+
+</html>
